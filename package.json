@@ -1,0 +1,9 @@
+{
+  "name": "ecsellent",
+  "version": "0.1.0",
+  "description": "A Typescript Entity Component System implementation",
+  "main": "index.js",
+  "repository": "git@github.com:ianseddon/ecsellent.git",
+  "author": "Ian Seddon <ianseddon55@gmail.com>",
+  "license": "MIT"
+}
