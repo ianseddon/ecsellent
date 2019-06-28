@@ -1,5 +1,6 @@
 import Entity from "./Entity";
 import { Component, ComponentClass } from "./Component";
+import EntityListener from "./EntityListener";
 
 interface EntityManagerInterface {
   /**
@@ -18,6 +19,18 @@ interface EntityManagerInterface {
    * @param entityId The ID of the entity to remove.
    */
   removeEntity(entityId: number) : void;
+
+  /**
+   * Add a listener that will be notified when entities are added/removed.
+   * @param entityListener
+   */
+  addEntityListener(entityListener: EntityListener) : void;
+
+  /**
+   * Remove the entity listener of the given class.
+   * @param entityListener
+   */
+  removeEntityListener(entityListener: EntityListener) : void;
 
   /**
    * Add a component to an entity.

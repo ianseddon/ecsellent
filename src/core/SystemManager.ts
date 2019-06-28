@@ -1,4 +1,5 @@
 import { System, SystemClass } from "./System";
+import Engine from "./Engine";
 
 interface SystemManagerInterface {
   /**
@@ -18,6 +19,13 @@ interface SystemManagerInterface {
    * @param system The system to remove.
    */
   removeSystem(system: System) : void;
+
+  /**
+   * Handle each systems logic each tick.
+   * @param engine The engine the systems are attached to.
+   * @param delta The delta.
+   */
+  update(engine: Engine, delta: number) : void;
 }
 
 /**
@@ -45,6 +53,15 @@ class SystemManager implements SystemManagerInterface {
    * @param system The system to remove.
    */
   removeSystem(system: System): void {
+    throw new Error("Method not implemented.");
+  }
+
+  /**
+   * Handle each systems logic each tick.
+   * @param engine The engine the systems are attached to.
+   * @param delta The delta.
+   */
+  update(engine: Engine, delta: number): void {
     throw new Error("Method not implemented.");
   }
 }
