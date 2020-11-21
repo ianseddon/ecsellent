@@ -1,5 +1,5 @@
 import { getClass } from "../utils/Constructor";
-import { Class } from "./Types";
+import { Class } from "./Class";
 
 /**
  * The base class for all components.
@@ -9,7 +9,7 @@ export abstract class Component {
   /**
    * Get the class of this component.
    */
-  getClass() {
+  getClass(): Class<this> {
     return getClass(this);
   }
 
@@ -18,7 +18,7 @@ export abstract class Component {
    *
    * @param componentClass The class to check.
    */
-  is(componentClass: Class<Component>) {
+  is(componentClass: Class<Component>) : boolean {
     return getClass(this) === componentClass;
   }
 }

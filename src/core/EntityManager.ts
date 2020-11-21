@@ -1,8 +1,15 @@
 import { Entity, EntityId } from "./Entity";
 import { Component } from "./Component";
 import { EntityListener } from "./EntityListener";
-import { Class, ComponentClass } from './Types';
+import { Class } from './Class';
 import { getClass } from "../utils/Constructor";
+
+/**
+ * Interface to allow mutation of entity ID.
+ */
+interface MutableIdEntity extends Entity {
+  id: number;
+}
 
 export interface EntityManagerInterface {
   /**
@@ -53,21 +60,21 @@ export interface EntityManagerInterface {
    * @param entityId The ID of the entity.
    * @param component The class of the component to retrieve.
    */
-  getComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>) : T | null;
+  getComponent<T extends Component>(entityId: EntityId, component: Class<T>) : T | null;
 
   /**
    * Check whether an entity has the given component.
    * @param entityId The ID of the entity.
    * @param component The class of the component check for.
    */
-  hasComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>) : boolean;
+  hasComponent<T extends Component>(entityId: EntityId, component: Class<T>) : boolean;
 
   /**
    * Remove a component from an entity.
    * @param entityId The ID of the entity.
    * @param component The class of the component to remove.
    */
-  removeComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>) : void;
+  removeComponent<T extends Component>(entityId: EntityId, component: Class<T>) : void;
 }
 
 export class EntityManager implements EntityManagerInterface {
@@ -105,8 +112,8 @@ export class EntityManager implements EntityManagerInterface {
    *
    * @param entity The entity to add.
    */
-  addEntity(entity: Entity) {
-    (entity as any).id = this.acquireEntityId();
+  addEntity(entity: Entity) : Entity {
+    (entity as MutableIdEntity).id = this.acquireEntityId();
     this.entities.set(entity.id, entity);
 
     // Notify entity listeners that a new entity was added.
@@ -161,7 +168,7 @@ export class EntityManager implements EntityManagerInterface {
   addComponent<T extends Component>(entityId: EntityId, component: T): T | false {
     const entity = this.getEntity(entityId);
 
-    return entity ? entity.add(component) : false;
+    return entity?.add(component) || false;
   }
 
   /**
@@ -169,10 +176,10 @@ export class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity.
    * @param component The class of the component to retrieve.
    */
-  getComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>): T | null {
+  getComponent<T extends Component>(entityId: EntityId, component: Class<T>): T | null {
     const entity = this.getEntity(entityId);
 
-    return entity ? entity.get(component) : null;
+    return entity?.get(component) || null;
   }
 
   /**
@@ -180,10 +187,10 @@ export class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity.
    * @param component The class of the component check for.
    */
-  hasComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>): boolean {
+  hasComponent<T extends Component>(entityId: EntityId, component: Class<T>): boolean {
     const entity = this.getEntity(entityId);
   
-    return entity ? entity.has(component) : false;
+    return entity?.has(component) || false;
   }
 
   /**
@@ -191,7 +198,7 @@ export class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity.
    * @param component The class of the component to remove.
    */
-  removeComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>): void {
+  removeComponent<T extends Component>(entityId: EntityId, component: Class<T>): void {
     const entity = this.getEntity(entityId);
 
     entity && entity.remove(component);

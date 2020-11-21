@@ -1,6 +1,6 @@
 import { getClass } from '../utils/Constructor';
 import { Component } from './Component';
-import { Class } from "./Types";
+import { Class } from "./Class";
 
 export type EntityId = number;
 
@@ -29,14 +29,14 @@ export class Entity {
   /**
    * Whether the entity has been instantiated.
    */
-  public instantiated() {
+  public instantiated() : boolean {
     return this.id > 0;
   }
 
   /**
    * Get all components.
    */
-  public all() {
+  public all() : Component[] {
     return this.components;
   }
 
@@ -45,7 +45,7 @@ export class Entity {
    *
    * @param component The component to add.
    */
-  public add<T extends Component>(component: T) {
+  public add<T extends Component>(component: T) : T {
     // TODO: Emit event
     this.addComponent(component) // && this.engine && this.engine.XXX
 

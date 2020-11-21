@@ -1,4 +1,4 @@
-import { Class } from '../core/Types';
+import { Class } from '../core/Class';
 
 /**
  * Get the constructor for the given instance.
