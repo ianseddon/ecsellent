@@ -1,7 +1,7 @@
 import { SystemManagerInterface, SystemManager } from "./SystemManager";
 import { EntityManager, EntityManagerInterface } from "./EntityManager";
 
-class Engine {
+export class Engine {
   readonly systemManager: SystemManagerInterface;
   readonly entityManager: EntityManagerInterface;
 

@@ -1,12 +1,24 @@
-interface Component {}
+import { getClass } from "../utils/Constructor";
+import { Class } from "./Types";
 
 /**
- * Interface enabling usage of type as value.
+ * The base class for all components.
  */
-interface ComponentClass<T extends Component> {
-  readonly name : string;
-  readonly tag? : string;
-  new() : T;
-}
+export abstract class Component {
 
-export { Component, ComponentClass };
+  /**
+   * Get the class of this component.
+   */
+  getClass() {
+    return getClass(this);
+  }
+
+  /**
+   * Check if the component is the given class.
+   *
+   * @param componentClass The class to check.
+   */
+  is(componentClass: Class<Component>) {
+    return getClass(this) === componentClass;
+  }
+}

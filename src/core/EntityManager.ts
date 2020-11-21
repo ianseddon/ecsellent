@@ -1,24 +1,33 @@
-import Entity from "./Entity";
-import { Component, ComponentClass } from "./Component";
-import EntityListener from "./EntityListener";
+import { Entity, EntityId } from "./Entity";
+import { Component } from "./Component";
+import { EntityListener } from "./EntityListener";
+import { Class, ComponentClass } from './Types';
+import { getClass } from "../utils/Constructor";
 
-interface EntityManagerInterface {
+export interface EntityManagerInterface {
   /**
-   * Create a new entity.
+   * Create a new uninstantiated entity.
    */
   createEntity() : Entity;
+
+  /**
+   * Add the given entity and instantiate it.
+   *
+   * @param entity The entity to add.
+   */
+  addEntity(entity: Entity) : Entity;
 
   /**
    * Retrieve an entity by its ID.
    * @param entityId The ID of the entity to retrieve.
    */
-  getEntity(entityId: number) : Entity;
+  getEntity(entityId: EntityId) : Entity | null;
 
   /**
    * Remove an entity by its ID.
    * @param entityId The ID of the entity to remove.
    */
-  removeEntity(entityId: number) : void;
+  removeEntity(entityId: EntityId) : void;
 
   /**
    * Add a listener that will be notified when entities are added/removed.
@@ -30,61 +39,118 @@ interface EntityManagerInterface {
    * Remove the entity listener of the given class.
    * @param entityListener
    */
-  removeEntityListener(entityListener: EntityListener) : void;
+  removeEntityListener<T extends EntityListener>(entityListener: Class<T>) : void;
 
   /**
    * Add a component to an entity.
    * @param entityId The ID of the entity.
    * @param component The class of the component to add.
    */
-  addComponent<T extends Component>(entityId: number, component: ComponentClass<T>) : T;
+  addComponent<T extends Component>(entityId: EntityId, component: T) : T | false;
 
   /**
    * Retrieve a component from an entity.
    * @param entityId The ID of the entity.
    * @param component The class of the component to retrieve.
    */
-  getComponent<T extends Component>(entityId: number, component: ComponentClass<T>) : T;
+  getComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>) : T | null;
 
   /**
    * Check whether an entity has the given component.
    * @param entityId The ID of the entity.
    * @param component The class of the component check for.
    */
-  hasComponent<T extends Component>(entityId: number, component: ComponentClass<T>) : boolean;
+  hasComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>) : boolean;
 
   /**
    * Remove a component from an entity.
    * @param entityId The ID of the entity.
    * @param component The class of the component to remove.
    */
-  removeComponent<T extends Component>(entityId: number, component: ComponentClass<T>) : void;
+  removeComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>) : void;
 }
 
-class EntityManager implements EntityManagerInterface {
+export class EntityManager implements EntityManagerInterface {
   /**
-   * Add a component to an entity.
-   * @param entityId The ID of the entity.
-   * @param component The class of the component to add.
+   * The ID of the next entity to be created.
+   */
+  protected nextEntityId: EntityId = 1;
+
+  /**
+   * The hash of all entities.
+   */
+  protected entities: Map<EntityId, Entity> = new Map();
+
+  /**
+   * The hash of entity listeners.
+   */
+  protected entityListeners: Map<Class<EntityListener>, EntityListener> = new Map();
+
+  /**
+   * Get the ID of the next created entity.
+   */
+  private acquireEntityId() : EntityId {
+    return this.nextEntityId++;
+  }
+
+  /**
+   * Create a new uninstantiated entity.
    */
   createEntity(): Entity {
-    throw new Error("Method not implemented.");
+    return new Entity();
+  }
+
+  /**
+   * Add the given entity and instantiate it.
+   *
+   * @param entity The entity to add.
+   */
+  addEntity(entity: Entity) {
+    (entity as any).id = this.acquireEntityId();
+    this.entities.set(entity.id, entity);
+
+    // Notify entity listeners that a new entity was added.
+    this.entityListeners.forEach(entityListener => entityListener.entityAdded(entity));
+
+    return entity;
   }
 
   /**
    * Retrieve an entity by its ID.
    * @param entityId The ID of the entity to retrieve.
    */
-  getEntity(entityId: number): Entity {
-    throw new Error("Method not implemented.");
+  getEntity(entityId: EntityId): Entity | null {
+    return this.entities.get(entityId) || null;
   }
 
   /**
    * Remove an entity by its ID.
    * @param entityId The ID of the entity to remove.
    */
-  removeEntity(entityId: number): void {
-    throw new Error("Method not implemented.");
+  removeEntity(entityId: EntityId): void {
+    const deleteEntity = this.entities.get(entityId);
+    if (!deleteEntity) {
+      return;
+    }
+
+    this.entityListeners.forEach(entityListener => entityListener.entityRemoved(deleteEntity));
+    this.entities.delete(entityId);
+  }
+
+  /**
+   * Add a listener that will be notified when entities are added/removed.
+   * @param entityListener
+   */
+  addEntityListener(entityListener: EntityListener): void {
+    this.entityListeners.set(getClass(entityListener), entityListener);
+  }
+
+  /**
+   * Remove the entity listener of the given class.
+   * @param entityListener
+   */
+  removeEntityListener<T extends EntityListener>(entityListenerClass: Class<T>): void {
+    this.entityListeners.delete(entityListenerClass);
   }
 
   /**
@@ -92,12 +158,21 @@ class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity.
    * @param component The class of the component to add.
    */
-  addComponent<T extends Component>(entityId: number, component: ComponentClass<T>): T {
-    throw new Error("Method not implemented.");
+  addComponent<T extends Component>(entityId: EntityId, component: T): T | false {
+    const entity = this.getEntity(entityId);
+
+    return entity ? entity.add(component) : false;
   }
 
-  getComponent<T extends Component>(entityId: number, component: ComponentClass<T>): T {
-    throw new Error("Method not implemented.");
+  /**
+   * Retrieve a component from an entity.
+   * @param entityId The ID of the entity.
+   * @param component The class of the component to retrieve.
+   */
+  getComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>): T | null {
+    const entity = this.getEntity(entityId);
+
+    return entity ? entity.get(component) : null;
   }
 
   /**
@@ -105,8 +180,10 @@ class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity.
    * @param component The class of the component check for.
    */
-  hasComponent<T extends Component>(entityId: number, component: ComponentClass<T>): boolean {
-    throw new Error("Method not implemented.");
+  hasComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>): boolean {
+    const entity = this.getEntity(entityId);
+  
+    return entity ? entity.has(component) : false;
   }
 
   /**
@@ -114,9 +191,9 @@ class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity.
    * @param component The class of the component to remove.
    */
-  removeComponent<T extends Component>(entityId: number, component: ComponentClass<T>): void {
-    throw new Error("Method not implemented.");
+  removeComponent<T extends Component>(entityId: EntityId, component: ComponentClass<T>): void {
+    const entity = this.getEntity(entityId);
+
+    entity && entity.remove(component);
   }
 }
-
-export { EntityManager, EntityManagerInterface };

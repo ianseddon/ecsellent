@@ -1,6 +1,6 @@
-import Entity from "./Entity";
+import { Entity } from "./Entity";
 
-interface EntityListener {
+export interface EntityListener {
   /**
    * Listener for when an entity is added.
    * @param entity The entity that was added.
@@ -13,5 +13,3 @@ interface EntityListener {
    */
   entityRemoved(entity: Entity) : void;
 }
-
-export default EntityListener;
