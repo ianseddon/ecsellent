@@ -16,6 +16,11 @@ describe('EntityManager', () => {
     expect(entityManager.addEntity(entityManager.createEntity()).instantiated()).toBe(true);
   });
 
+  it('wont instantiate an entity twice', () => {
+    const entity = entityManager.addEntity(entityManager.createEntity());
+    expect(() => entityManager.addEntity(entity)).toThrowError();
+  });
+
   it('adds entities with unique ids', () => {
     const e1 = entityManager.createEntity();
     const e2 = entityManager.createEntity();

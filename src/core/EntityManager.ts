@@ -113,6 +113,10 @@ export class EntityManager implements EntityManagerInterface {
    * @param entity The entity to add.
    */
   addEntity(entity: Entity) : Entity {
+    if (entity.instantiated()) {
+      throw new Error('Entity is already instantiated.');
+    }
+    
     (entity as MutableIdEntity).id = this.acquireEntityId();
     this.entities.set(entity.id, entity);
 
