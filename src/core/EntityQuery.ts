@@ -1,25 +1,34 @@
+import { Bitset } from "../utils/Bitset";
+import { getClass } from "../utils/Class";
 import { Class } from "./Class";
 import { Component } from "./Component";
 import { Entity } from "./Entity";
 import { EntityListener } from "./EntityListener";
 import { EntityManagerInterface } from "./EntityManager";
+import { UniqueId } from "./UniqueId";
 
 type Condition = Class<Component>;
-export type Conditions = { require: Condition[], exclude: Condition[] };
+export type Conditions = { any?: Condition[], exclude?: Condition[], require?: Condition[] };
 
 export class EntityQuery implements EntityListener {
 
-  protected readonly conditions: Conditions;
-
+  protected readonly any: Bitset;
+  protected readonly require: Bitset;
+  protected readonly exclude: Bitset;
   protected readonly entityManager: EntityManagerInterface;
 
+  /**
+   * The results of the query.
+   */
   results: Entity[] = [];
 
   constructor(entityManager: EntityManagerInterface, conditions: Conditions) {
-    this.conditions = conditions;
+    this.any = UniqueId.bitsetForClasses(...conditions.any || []);
+    this.require = UniqueId.bitsetForClasses(...conditions.require || []);
+    this.exclude = UniqueId.bitsetForClasses(...conditions.exclude || []);
     this.entityManager = entityManager;
 
-    if (this.conditions.require.length === 0 && this.conditions.exclude.length === 0) {
+    if (this.any.count() == 0 && this.require.count() === 0 && this.exclude.count() === 0) {
       throw new Error('Cannot create an empty query.');
     }
 
@@ -47,12 +56,23 @@ export class EntityQuery implements EntityListener {
     this.match(entity) && this.removeEntity(entity);
   }
 
+  /**
+   * Add the given entity to the results.
+   *
+   * @param entity The entity to add.
+   */
   protected addEntity(entity: Entity) : void {
     this.results.push(entity);
   }
 
+  /**
+   * Remove the given entity to the results.
+   *
+   * @param entity The entity to remove.
+   */
   protected removeEntity(entity: Entity) : void {
-    this.results.splice(this.results.indexOf(entity), 1);
+    const index = this.results.indexOf(entity);
+    index !== -1 && this.results.splice(index, 1);
   }
 
   /**
@@ -61,8 +81,10 @@ export class EntityQuery implements EntityListener {
    * @param entity The entity to match against.
    */
   protected match(entity: Entity) : boolean {
-    return !!this.conditions.require.reduce((match, condition) => match && entity.has(condition), true)
-      && !!this.conditions.exclude.reduce((excludes, condition) => excludes && !entity.has(condition), true);
+    const mask = UniqueId.bitsetForClasses(...entity.all().map(getClass));
+    return mask.containsAll(this.require)
+      && (this.any.none() ? true : mask.intersects(this.any))
+      && !mask.intersects(this.exclude);
   }
 
 }

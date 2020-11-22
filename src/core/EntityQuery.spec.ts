@@ -46,6 +46,19 @@ describe('EntityQuery', () => {
     expect(query.results[0]).toBe(entity);
   });
 
+  it('adds entities containing one of the any conditions', () => {
+    entityManager.addEntity(entityManager.createEntity());
+    const e1 = entityManager.addEntity(entityManager.createEntity());
+    e1.add(new MockComponent);
+
+    conditions.any = [MockComponent, OtherMockComponent];
+
+    const query = new EntityQuery(entityManager, conditions);
+
+    expect(query.results).toHaveLength(1);
+    expect(query.results[0]).toBe(e1);
+  });
+
   it('excludes entities without all required components', () => {
     entityManager.addEntity(entityManager.createEntity());
     const e1 = entityManager.addEntity(entityManager.createEntity());
