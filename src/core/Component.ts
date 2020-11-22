@@ -1,4 +1,4 @@
-import { getClass } from "../utils/Constructor";
+import { getClass } from "../utils/Class";
 import { Class } from "./Class";
 
 /**

@@ -1,4 +1,4 @@
-import { getClass } from '../utils/Constructor';
+import { getClass } from '../utils/Class';
 import { Component } from './Component';
 import { Class } from "./Class";
 

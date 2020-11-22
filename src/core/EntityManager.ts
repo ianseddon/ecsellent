@@ -2,7 +2,7 @@ import { Entity, EntityId } from "./Entity";
 import { Component } from "./Component";
 import { EntityListener } from "./EntityListener";
 import { Class } from './Class';
-import { getClass } from "../utils/Constructor";
+import { getClass } from "../utils/Class";
 
 /**
  * Interface to allow mutation of entity ID.
