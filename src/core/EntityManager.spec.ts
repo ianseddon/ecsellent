@@ -10,10 +10,12 @@ beforeEach(() => {
 describe('EntityManager', () => {
   it('creates uninstantiated entities', () => {
     expect(entityManager.createEntity().instantiated()).toBe(false);
+    expect(entityManager.allEntities()).toHaveLength(0);
   });
 
-  it('instantiates entities when adding them', () => {
+  it('adds entities and instantiates them', () => {
     expect(entityManager.addEntity(entityManager.createEntity()).instantiated()).toBe(true);
+    expect(entityManager.allEntities()).toHaveLength(1);
   });
 
   it('wont instantiate an entity twice', () => {
@@ -26,6 +28,7 @@ describe('EntityManager', () => {
     const e2 = entityManager.createEntity();
 
     expect(entityManager.addEntity(e1).id).not.toEqual(entityManager.addEntity(e2).id);
+    expect(entityManager.allEntities()).toHaveLength(2);
   });
 
   it('gets entities by id', () => {
@@ -39,6 +42,7 @@ describe('EntityManager', () => {
     entityManager.removeEntity(entity.id);
 
     expect(entityManager.getEntity(entity.id)).toBeNull();
+    expect(entityManager.allEntities()).toHaveLength(0);
   });
 
   class TestListener implements EntityListener {

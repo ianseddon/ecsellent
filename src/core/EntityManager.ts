@@ -18,6 +18,11 @@ export interface EntityManagerInterface {
   createEntity() : Entity;
 
   /**
+   * Get an array of all entities.
+   */
+  allEntities() : Entity[];
+
+  /**
    * Add the given entity and instantiate it.
    *
    * @param entity The entity to add.
@@ -84,9 +89,14 @@ export class EntityManager implements EntityManagerInterface {
   protected nextEntityId: EntityId = 1;
 
   /**
+   * A contiguous array of all entities.
+   */
+  protected entities: Entity[] = [];
+
+  /**
    * The hash of all entities.
    */
-  protected entities: Map<EntityId, Entity> = new Map();
+  protected entityHash: Map<EntityId, Entity> = new Map();
 
   /**
    * The hash of entity listeners.
@@ -108,6 +118,13 @@ export class EntityManager implements EntityManagerInterface {
   }
 
   /**
+   * Get an array of all entities.
+   */
+  allEntities() : Entity[] {
+    return this.entities;
+  }
+
+  /**
    * Add the given entity and instantiate it.
    *
    * @param entity The entity to add.
@@ -116,9 +133,11 @@ export class EntityManager implements EntityManagerInterface {
     if (entity.instantiated()) {
       throw new Error('Entity is already instantiated.');
     }
-    
+
     (entity as MutableIdEntity).id = this.acquireEntityId();
-    this.entities.set(entity.id, entity);
+
+    this.entities.push(entity);
+    this.entityHash.set(entity.id, entity);
 
     // Notify entity listeners that a new entity was added.
     this.entityListeners.forEach(entityListener => entityListener.entityAdded(entity));
@@ -131,7 +150,7 @@ export class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity to retrieve.
    */
   getEntity(entityId: EntityId): Entity | null {
-    return this.entities.get(entityId) || null;
+    return this.entityHash.get(entityId) || null;
   }
 
   /**
@@ -139,13 +158,15 @@ export class EntityManager implements EntityManagerInterface {
    * @param entityId The ID of the entity to remove.
    */
   removeEntity(entityId: EntityId): void {
-    const deleteEntity = this.entities.get(entityId);
+    const deleteEntity = this.entityHash.get(entityId);
     if (!deleteEntity) {
       return;
     }
 
     this.entityListeners.forEach(entityListener => entityListener.entityRemoved(deleteEntity));
-    this.entities.delete(entityId);
+
+    this.entities.splice(this.entities.indexOf(deleteEntity), 1);
+    this.entityHash.delete(entityId);
   }
 
   /**
