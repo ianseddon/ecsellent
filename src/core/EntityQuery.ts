@@ -2,7 +2,7 @@ import { Class } from "./Class";
 import { Component } from "./Component";
 import { Entity } from "./Entity";
 import { EntityListener } from "./EntityListener";
-import { EntityManager } from "./EntityManager";
+import { EntityManagerInterface } from "./EntityManager";
 
 type Condition = Class<Component>;
 export type Conditions = { require: Condition[], exclude: Condition[] };
@@ -11,11 +11,11 @@ export class EntityQuery implements EntityListener {
 
   protected readonly conditions: Conditions;
 
-  protected readonly entityManager: EntityManager;
+  protected readonly entityManager: EntityManagerInterface;
 
   results: Entity[] = [];
 
-  constructor(entityManager: EntityManager, conditions: Conditions) {
+  constructor(entityManager: EntityManagerInterface, conditions: Conditions) {
     this.conditions = conditions;
     this.entityManager = entityManager;
 
