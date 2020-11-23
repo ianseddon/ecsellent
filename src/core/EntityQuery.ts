@@ -81,10 +81,37 @@ export class EntityQuery implements EntityListener {
    * @param entity The entity to match against.
    */
   protected match(entity: Entity) : boolean {
-    const mask = UniqueId.bitsetForClasses(...entity.all().map(getClass));
-    return mask.containsAll(this.require)
-      && (this.any.none() ? true : mask.intersects(this.any))
-      && !mask.intersects(this.exclude);
+    const components = entity.getComponentBitset();
+
+    return this.containsRequired(components)
+      && this.containsAny(components)
+      && this.containsNone(components);
   }
 
+  /**
+   * Check if the given component bitset contains all required components.
+   * 
+   * @param components The component bitset to check.
+   */
+  protected containsRequired(components: Bitset) : boolean {
+    return components.containsAll(this.require);
+  }
+
+  /**
+   * Check if the given component bitset contains any of the any components.
+   * 
+   * @param components The component bitset to check.
+   */
+  protected containsAny(components: Bitset) : boolean {
+    return this.any.none() ? true : components.intersects(this.any);
+  }
+
+  /**
+   * Check if the given component bitset contains none of the excluded components.
+   *
+   * @param components The component bitset to check.
+   */
+  protected containsNone(components: Bitset) : boolean {
+    return !components.intersects(this.exclude);
+  }
 }

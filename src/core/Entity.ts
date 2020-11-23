@@ -1,6 +1,7 @@
-import { getClass } from '../utils/Class';
 import { Component } from './Component';
 import { Class } from "./Class";
+import { Bitset } from '../utils/Bitset';
+import { UniqueId } from './UniqueId';
 
 export type EntityId = number;
 
@@ -15,28 +16,40 @@ export class Entity {
    * Entities with id <= 0 are considered uninstantiated.
    */
   public readonly id: EntityId = 0;
-
-  /**
-   * The hash of all components by class on the entity.
-   */
-  private componentHash : Map<Class<Component>, Component> = new Map();
-
+  
   /**
    * A contiguous array of all components on the entity.
    */
   private components : Component[] = [];
 
   /**
+   * The hash of all components by class on the entity.
+   */
+  private componentHash : { [key: string]: Component } = {};
+
+  /**
+   * A bitset representation of the components on the entity.
+   */
+  private componentBitset: Bitset = new Bitset();
+
+  /**
    * Whether the entity has been instantiated.
    */
-  public instantiated() : boolean {
+  instantiated() : boolean {
     return this.id > 0;
+  }
+
+  /**
+   * Getter for the component bitset.
+   */
+  getComponentBitset() : Bitset {
+    return this.componentBitset;
   }
 
   /**
    * Get all components.
    */
-  public all() : Component[] {
+  all() : Component[] {
     return this.components;
   }
 
@@ -45,7 +58,7 @@ export class Entity {
    *
    * @param component The component to add.
    */
-  public add<T extends Component>(component: T) : T {
+  add<T extends Component>(component: T) : T {
     // TODO: Emit event
     this.addComponent(component) // && this.engine && this.engine.XXX
 
@@ -57,8 +70,8 @@ export class Entity {
    *
    * @param componentClass The component class.
    */
-  public has<T extends Component>(componentClass: Class<T>) : boolean {
-    return this.componentHash.has(componentClass);
+  has<T extends Component>(componentClass: Class<T>) : boolean {
+    return this.componentBitset.test(UniqueId.forClass(componentClass).getIndex());
   }
 
   /**
@@ -66,8 +79,8 @@ export class Entity {
    *
    * @param componentClass The component class.
    */
-  public get<T extends Component>(componentClass: Class<T>) : T | null {
-    return this.componentHash.get(componentClass) as T || null;
+  get<T extends Component>(componentClass: Class<T>) : T | null {
+    return this.getComponent(UniqueId.forClass(componentClass)) as T || null;
   }
 
   /**
@@ -76,9 +89,9 @@ export class Entity {
    *
    * @param componentClass The class of the component to remove.
    */
-  public remove<T extends Component>(componentClass: Class<T>) : T | null {
+  remove<T extends Component>(componentClass: Class<T>) : T | null {
     // TODO: Emit event.
-    return this.removeComponent(componentClass) as T || null;
+    return this.removeComponent(UniqueId.forClass(componentClass)) as T || null;
   }
 
   /**
@@ -87,20 +100,30 @@ export class Entity {
    * @param component The component to add.
    */
   private addComponent(component: Component) : boolean {
-    const type = getClass(component);
-    const old = this.componentHash.get(type);
+    const id = UniqueId.forInstance(component);
+    const old = this.componentHash[id.getIndex()] || null;
     if (component === old) {
       return false;
     }
-
+    
     // Remove the old component first.
-    old && this.removeComponent(type);
-
-    // Add the component to both data structures.
-    this.componentHash.set(type, component);
+    old && this.removeComponent(id);
+    
+    // Add the component to all data structures.
+    this.componentHash[id.getIndex()] = component;
     this.components.push(component);
+    this.componentBitset.set(id.getIndex());
 
     return true;
+  }
+
+  /**
+   * Internal getter for components.
+   *
+   * @param componentClass The class of the component to get.
+   */
+  private getComponent(id: UniqueId) : Component | null {
+    return this.componentHash[id.getIndex()] || null;
   }
 
   /**
@@ -108,11 +131,13 @@ export class Entity {
    *
    * @param componentClass The class of the component to remove.
    */
-  private removeComponent(componentClass: Class<Component>) : Component | null {
-    const component = this.get(componentClass);
+  private removeComponent(id: UniqueId) : Component | null {
+    const component = this.getComponent(id);
     if (component) {
-      this.components.splice(this.components.indexOf(component), 1);
-      this.componentHash.delete(componentClass);
+      delete this.componentHash[id.getIndex()];
+      const index = this.components.indexOf(component);
+      index !== -1 && this.components.splice(index, 1);
+      this.componentBitset.reset(id.getIndex());
     }
 
     return component || null;

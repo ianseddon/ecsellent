@@ -33,6 +33,7 @@ describe('Entity', () => {
     entity.remove(TestComponent);
 
     expect(entity.all()).toHaveLength(1);
+    expect(entity.has(OtherComponent)).toBe(true);
     expect(entity.has(TestComponent)).toBe(false);
   });
 
