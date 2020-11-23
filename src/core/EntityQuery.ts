@@ -4,7 +4,7 @@ import { Class } from "./Class";
 import { Component } from "./Component";
 import { Entity } from "./Entity";
 import { EntityListener } from "./EntityListener";
-import { EntityManagerInterface } from "./EntityManager";
+import { EntityManager } from "./EntityManager";
 import { UniqueId } from "./UniqueId";
 
 type Condition = Class<Component>;
@@ -15,14 +15,14 @@ export class EntityQuery implements EntityListener {
   protected readonly any: Bitset;
   protected readonly require: Bitset;
   protected readonly exclude: Bitset;
-  protected readonly entityManager: EntityManagerInterface;
+  protected readonly entityManager: EntityManager;
 
   /**
    * The results of the query.
    */
   results: Entity[] = [];
 
-  constructor(entityManager: EntityManagerInterface, conditions: Conditions) {
+  constructor(entityManager: EntityManager, conditions: Conditions) {
     this.any = UniqueId.bitsetForClasses(...conditions.any || []);
     this.require = UniqueId.bitsetForClasses(...conditions.require || []);
     this.exclude = UniqueId.bitsetForClasses(...conditions.exclude || []);

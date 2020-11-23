@@ -1,51 +1,69 @@
 import Engine from "./Engine";
-
-interface System {
-  /**
-   * Called when this system is added to the engine.
-   * @param engine The engine this system is attached to.
-   */
-  addedToEngine(engine: Engine) : void;
-
-  /**
-   * Called when this system is removed from the engine.
-   * @param engine The engine this system is attached to.
-   */
-  removedFromEngine(engine: Engine) : void;
-
-  /**
-   * Handle processing of entities or other logic every tick.
-   * @param engine The engine this system is attached to.
-   * @param delta Frame tick delta.
-   */
-  update(engine: Engine, delta: number) : void;
-}
+import { EntityManager } from "./EntityManager";
+import { Conditions, EntityQuery } from "./EntityQuery";
 
 /**
- * Interface enabling usage of type as value.
+ * The base class for all systems. These are intended to process entities.
  */
-interface SystemClass<T extends System> {
-  new() : T;
-}
+export abstract class System {
 
-/**
- *
- */
-abstract class AbstractSystem implements System {
+  /**
+   * The engine this is attached to.
+   */
+  protected engine: Engine | null = null;
+
+  /**
+   * The priority this system should be given.
+   *
+   * A lower number is given higher priority.
+   */
+  protected priority = 0;
+
+  /**
+   * The queries for this system.
+   */
+  protected queries: { [key: string]: EntityQuery } = {};
+
+  /**
+   * This can be overridden by systems that require queried entities.
+   */
+  protected conditions: { [key: string]: Conditions } = {};
+
+  /**
+   * Get the priority.
+   */
+  getPriority() : number {
+    return this.priority;
+  }
+
+  /**
+   * Set the priority.
+   *
+   * @param priority The priority.
+   */
+  setPriority(priority: number) : void {
+    this.priority = priority;
+    // TODO: Trigger system sorting.
+  }
+
   /**
    * Called when this system is added to the engine.
+   *
    * @param engine The engine this system is attached to.
    */
   addedToEngine(engine: Engine): void {
-    throw new Error("Method not implemented.");
+    this.engine = engine;
+    this.buildQueries(engine.entityManager);
   }
 
   /**
    * Called when this system is removed from the engine.
+   *
    * @param engine The engine this system is attached to.
    */
   removedFromEngine(engine: Engine): void {
-    throw new Error("Method not implemented.");
+    this.cleanupQueries(engine.entityManager);
+    this.engine = null;
   }
 
   /**
@@ -53,7 +71,24 @@ abstract class AbstractSystem implements System {
    * @param engine The engine this system is attached to.
    * @param delta Frame tick delta.
    */
-  abstract update(engine: Engine, delta: number) : void;
-}
+  abstract update(delta: number) : void;
 
-export { AbstractSystem, System, SystemClass };
+  /**
+   * Build queries from the conditions against the given entity manager.
+   *
+   * @param entityManager The entity manager.
+   */
+  protected buildQueries(entityManager: EntityManager) : void {
+    Object.entries(this.conditions).forEach(([key, conditions]) => {
+      this.queries[key] = new EntityQuery(entityManager, conditions);
+    });
+  }
+
+  /**
+   * Clean up queries.
+   */
+  protected cleanupQueries(entityManager: EntityManager) : void {
+    // TODO: Unregister entity listeners.
+    this.queries = {};
+  }
+}
