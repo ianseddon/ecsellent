@@ -2,7 +2,11 @@
   "name": "ecsellent",
   "version": "0.1.0",
   "description": "A Typescript Entity Component System implementation",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "repository": "git@github.com:ianseddon/ecsellent.git",
   "author": "Ian Seddon <ianseddon55@gmail.com>",
   "license": "MIT",
