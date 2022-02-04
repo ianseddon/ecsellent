@@ -15,27 +15,27 @@ export declare class Bitset {
      *
      * @param position The bit position.
      */
-    set(position: number): void;
+    set(position: number): Bitset;
     /**
      * Set all bits.
      */
-    setAll(): void;
+    setAll(): Bitset;
     /**
      * Reset the given bit.
      *
      * @param position The bit position.
      */
-    reset(position: number): void;
+    reset(position: number): Bitset;
     /**
      * Reset all bits.
      */
-    clear(): void;
+    clear(): Bitset;
     /**
      * Flip the bit at the given position.
      *
      * @param position The bit position.
      */
-    flip(position: number): void;
+    flip(position: number): Bitset;
     /**
      * Count the number of bits set.
      */

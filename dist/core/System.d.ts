@@ -1,10 +1,14 @@
 import Engine from "./Engine";
+import { Component } from "./Component";
+import { ComponentListener } from "./ComponentListener";
+import { Entity } from "./Entity";
+import { EntityListener } from "./EntityListener";
 import { EntityManager } from "./EntityManager";
 import { Conditions, EntityQuery } from "./EntityQuery";
 /**
  * The base class for all systems. These are intended to process entities.
  */
-export declare abstract class System {
+export declare abstract class System implements ComponentListener, EntityListener {
     /**
      * The engine this is attached to.
      */
@@ -50,6 +54,29 @@ export declare abstract class System {
      */
     removedFromEngine(engine: Engine): void;
     /**
+     *
+     * @param entity
+     */
+    entityAdded(entity: Entity): void;
+    /**
+     *
+     * @param entity
+     */
+    entityRemoved(entity: Entity): void;
+    /**
+     *
+     * @param entity
+     *
+     * @param component
+     */
+    componentAdded(entity: Entity, component: Component): void;
+    /**
+     *
+     * @param entity
+     * @param component
+     */
+    componentRemoved(entity: Entity, component: Component): void;
+    /**
      * Handle processing of entities or other logic every tick.
      * @param engine The engine this system is attached to.
      * @param delta Frame tick delta.
@@ -61,6 +88,20 @@ export declare abstract class System {
      * @param entityManager The entity manager.
      */
     protected buildQueries(entityManager: EntityManager): void;
+    /**
+     * Notifies when an entity is added to a query result.
+     *
+     * @param key The condition key.
+     * @param entity The entity.
+     */
+    queryEntityAdded(key: string, entity: Entity): void;
+    /**
+     * Notifies when an entity is removed from a query result.
+     *
+     * @param key The condition key.
+     * @param entity The entity.
+     */
+    queryEntityRemoved(key: string, entity: Entity): void;
     /**
      * Clean up queries.
      */

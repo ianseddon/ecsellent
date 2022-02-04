@@ -8,9 +8,12 @@ export class MovementSystem extends System {
   };
 
   update(delta: number) : void {
-    const entities = this.queries.entities.results;
-    for (const entity of entities) {
-      const canvas = this.queries.context.results[0] || null;
+    const entities = this.queries.entities.results.values();
+    let canvas = null;
+    for (let value of this.queries.context.results.values()) {
+      canvas = value;
+    }
+    for (let entity of entities) {
       const canvasComponent = canvas?.get(CanvasContext);
       if (!canvas || !canvasComponent) {
         console.warn('Couldnt get canvas context!');
@@ -57,7 +60,10 @@ export class Renderer extends System {
   };
 
   update(delta: number): void {
-    const canvas = this.queries.context.results[0] || null;
+    let canvas = null;
+    for (let value of this.queries.context.results.values()) {
+      canvas = value;
+    }
     const canvasComponent = canvas?.get(CanvasContext);
     const ctx = canvasComponent?.context;
     if (!canvas || !canvasComponent || !ctx) {
@@ -72,7 +78,7 @@ export class Renderer extends System {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    const entities = this.queries.entities.results;
+    const entities = this.queries.entities.results.values();
     for (const entity of entities) {
       const circle = entity.get(Circle);
       const movement = entity.get(Movement);

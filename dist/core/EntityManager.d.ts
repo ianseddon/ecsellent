@@ -1,8 +1,10 @@
-import { Entity, EntityId } from "./Entity";
 import { Component } from "./Component";
+import { ComponentListener } from "./ComponentListener";
+import { Entity, EntityId } from "./Entity";
 import { EntityListener } from "./EntityListener";
 import { Class } from './Class';
-export declare class EntityManager {
+import { UniqueId } from "./UniqueId";
+export declare class EntityManager implements ComponentListener {
     /**
      * The ID of the next entity to be created.
      */
@@ -18,7 +20,11 @@ export declare class EntityManager {
     /**
      * The hash of entity listeners.
      */
-    protected entityListeners: Map<Class<EntityListener>, EntityListener>;
+    protected entityListeners: Map<UniqueId, EntityListener>;
+    /**
+     * The hash of component listeners.
+     */
+    protected componentListeners: Map<UniqueId, ComponentListener>;
     /**
      * Get the ID of the next created entity.
      */
@@ -49,14 +55,16 @@ export declare class EntityManager {
     removeEntity(entityId: EntityId): void;
     /**
      * Add a listener that will be notified when entities are added/removed.
+     *
      * @param entityListener
      */
     addEntityListener(entityListener: EntityListener): void;
     /**
      * Remove the entity listener of the given class.
+     *
      * @param entityListener
      */
-    removeEntityListener<T extends EntityListener>(entityListenerClass: Class<T>): void;
+    removeEntityListener(entityListener: EntityListener): void;
     /**
      * Add a component to an entity.
      * @param entityId The ID of the entity.
@@ -81,4 +89,29 @@ export declare class EntityManager {
      * @param component The class of the component to remove.
      */
     removeComponent<T extends Component>(entityId: EntityId, component: Class<T>): void;
+    /**
+     * Add a listener that will be notified when components are added or removed from entities.
+     *
+     * @param componentListener The component listener.
+     */
+    addComponentListener(componentListener: ComponentListener): void;
+    /**
+     * Remove a component listener with the given class.
+     *
+     * @param componentListenerClass The component listener class.
+     */
+    removeComponentListener(componentListener: ComponentListener): void;
+    /**
+     *
+     * @param entity
+     * @param component
+     */
+    componentAdded(entity: Entity, component: Component): void;
+    /**
+     * Propagate component removal to all listeners.
+     *
+     * @param entity The entity.
+     * @param component The component.
+     */
+    componentRemoved(entity: Entity, component: Component): void;
 }

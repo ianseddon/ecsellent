@@ -1,6 +1,7 @@
 import { Bitset } from "../utils/Bitset";
 import { Class } from "./Class";
 export declare class UniqueId {
+    static anonymousIndex: number;
     private readonly baseIndex;
     private readonly index;
     private readonly depth;

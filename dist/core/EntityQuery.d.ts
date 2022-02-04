@@ -1,25 +1,41 @@
 import { Bitset } from "../utils/Bitset";
 import { Class } from "./Class";
 import { Component } from "./Component";
-import { Entity } from "./Entity";
+import { ComponentListener } from "./ComponentListener";
+import { Entity, EntityId } from "./Entity";
 import { EntityListener } from "./EntityListener";
+import { EntityQueryListener } from "./EntityQueryListener";
 import { EntityManager } from "./EntityManager";
+import { UniqueId } from "./UniqueId";
 declare type Condition = Class<Component>;
 export declare type Conditions = {
     any?: Condition[];
     exclude?: Condition[];
     require?: Condition[];
 };
-export declare class EntityQuery implements EntityListener {
+export declare class EntityQuery implements ComponentListener, EntityListener {
     protected readonly any: Bitset;
     protected readonly require: Bitset;
     protected readonly exclude: Bitset;
     protected readonly entityManager: EntityManager;
+    protected queryListeners: Map<UniqueId, EntityQueryListener>;
     /**
      * The results of the query.
      */
-    results: Entity[];
+    results: Map<EntityId, Entity>;
     constructor(entityManager: EntityManager, conditions: Conditions);
+    /**
+     * Add a listener that will be notified when entities are added/removed from the query.
+     *
+     * @param entityListener
+     */
+    addQueryListener(queryListener: EntityQueryListener): void;
+    /**
+     * Remove the entity listener of the given class.
+     *
+     * @param entityListener
+     */
+    removeQueryListener<T extends EntityQueryListener>(queryListenerClass: Class<T>): void;
     /**
      * Entity listener callback.
      *
@@ -32,6 +48,20 @@ export declare class EntityQuery implements EntityListener {
      * @param entity The entity removed.
      */
     entityRemoved(entity: Entity): void;
+    /**
+     * Component listener callback.
+     *
+     * @param entity The entity.
+     * @param component The component being added.
+     */
+    componentAdded(entity: Entity, component: Component): void;
+    /**
+     * Component listener callback.
+     *
+     * @param entity The entity.
+     * @param component The component being removed.
+     */
+    componentRemoved(entity: Entity, component: Component): void;
     /**
      * Add the given entity to the results.
      *
@@ -50,6 +80,13 @@ export declare class EntityQuery implements EntityListener {
      * @param entity The entity to match against.
      */
     protected match(entity: Entity): boolean;
+    /**
+     * Get whether the bitset matches the query.
+     *
+     * @param bitset The component bitset.
+     * @returns Whether the query matches.
+     */
+    protected matchBitset(bitset: Bitset): boolean;
     /**
      * Check if the given component bitset contains all required components.
      *

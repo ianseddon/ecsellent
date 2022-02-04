@@ -1,6 +1,7 @@
 import { Component } from './Component';
 import { Class } from "./Class";
 import { Bitset } from '../utils/Bitset';
+import { EntityManager } from './EntityManager';
 export declare type EntityId = number;
 /**
  * The base class for all entities.
@@ -24,6 +25,8 @@ export declare class Entity {
      * A bitset representation of the components on the entity.
      */
     private componentBitset;
+    private entityManager?;
+    constructor(entityManager?: EntityManager);
     /**
      * Whether the entity has been instantiated.
      */
