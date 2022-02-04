@@ -1,5 +1,6 @@
-import { Entity, EntityId } from "./Entity";
 import { Component } from "./Component";
+import { ComponentListener } from "./ComponentListener";
+import { Entity, EntityId } from "./Entity";
 import { EntityListener } from "./EntityListener";
 import { Class } from './Class';
 import { getClass } from "../utils/Class";
@@ -11,7 +12,8 @@ interface MutableIdEntity extends Entity {
   id: number;
 }
 
-export class EntityManager {
+export class EntityManager implements ComponentListener {
+
   /**
    * The ID of the next entity to be created.
    */
@@ -33,6 +35,11 @@ export class EntityManager {
   protected entityListeners: Map<Class<EntityListener>, EntityListener> = new Map();
 
   /**
+   * The hash of component listeners.
+   */
+  protected componentListeners: Map<Class<ComponentListener>, ComponentListener> = new Map();
+
+  /**
    * Get the ID of the next created entity.
    */
   private acquireEntityId() : EntityId {
@@ -43,7 +50,7 @@ export class EntityManager {
    * Create a new uninstantiated entity.
    */
   createEntity(): Entity {
-    return new Entity();
+    return new Entity(this);
   }
 
   /**
@@ -157,4 +164,42 @@ export class EntityManager {
 
     entity && entity.remove(component);
   }
+
+  /**
+   * Add a listener that will be notified when components are added or removed from entities.
+   * 
+   * @param componentListener The component listener.
+   */
+  addComponentListener(componentListener: ComponentListener) {
+    this.componentListeners.set(getClass(componentListener), componentListener);
+  }
+
+  /**
+   * Remove a component listener with the given class.
+   * 
+   * @param componentListenerClass The component listener class.
+   */
+  removeComponentListener<T extends ComponentListener>(componentListenerClass: Class<T>) {
+    this.componentListeners.delete(componentListenerClass);
+  }
+
+  /**
+   * 
+   * @param entity 
+   * @param component 
+   */
+  componentAdded(entity: Entity, component: Component) {
+    this.componentListeners.forEach(componentListener => componentListener.componentAdded(entity, component));
+  }
+
+  /**
+   * Propagate component removal to all listeners.
+   * 
+   * @param entity The entity.
+   * @param component The component.
+   */
+  componentRemoved(entity: Entity, component: Component) {
+    this.componentListeners.forEach(componentListener => componentListener.componentRemoved(entity, component));
+  }
+
 }

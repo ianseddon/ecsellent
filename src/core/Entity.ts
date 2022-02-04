@@ -2,6 +2,7 @@ import { Component } from './Component';
 import { Class } from "./Class";
 import { Bitset } from '../utils/Bitset';
 import { UniqueId } from './UniqueId';
+import { EntityManager } from './EntityManager';
 
 export type EntityId = number;
 
@@ -32,6 +33,12 @@ export class Entity {
    */
   private componentBitset: Bitset = new Bitset();
 
+  private entityManager: EntityManager;
+
+  constructor(entityManager: EntityManager) {
+    this.entityManager = entityManager;
+  }
+
   /**
    * Whether the entity has been instantiated.
    */
@@ -59,7 +66,6 @@ export class Entity {
    * @param component The component to add.
    */
   add<T extends Component>(component: T) : T {
-    // TODO: Emit event
     this.addComponent(component) // && this.engine && this.engine.XXX
 
     return component;
@@ -90,7 +96,6 @@ export class Entity {
    * @param componentClass The class of the component to remove.
    */
   remove<T extends Component>(componentClass: Class<T>) : T | null {
-    // TODO: Emit event.
     return this.removeComponent(UniqueId.forClass(componentClass)) as T || null;
   }
 
@@ -105,6 +110,8 @@ export class Entity {
     if (component === old) {
       return false;
     }
+
+    this.entityManager?.componentAdded(this, component);
     
     // Remove the old component first.
     old && this.removeComponent(id);
@@ -134,6 +141,8 @@ export class Entity {
   private removeComponent(id: UniqueId) : Component | null {
     const component = this.getComponent(id);
     if (component) {
+      this.entityManager?.componentRemoved(this, component);
+
       delete this.componentHash[id.getIndex()];
       const index = this.components.indexOf(component);
       index !== -1 && this.components.splice(index, 1);

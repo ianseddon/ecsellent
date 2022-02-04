@@ -110,4 +110,55 @@ describe('EntityQuery', () => {
     expect(query.results).toHaveLength(1);
     expect(query.results[0]).toBe(e2);
   });
+
+  it('includes entities that have a required component added', () => {
+    const e1 = entityManager.addEntity(entityManager.createEntity());
+    const e2 = entityManager.addEntity(entityManager.createEntity());
+    e1.add(new MockComponent);
+    e2.add(new MockComponent);
+    e2.add(new OtherMockComponent);
+
+    conditions.require = [MockComponent, OtherMockComponent];
+    const query = new EntityQuery(entityManager, conditions);
+
+    expect(query.results).toHaveLength(1);
+    e1.add(new OtherMockComponent);
+
+    expect(query.results).toHaveLength(2);
+  });
+
+  it('removes entities that have a required component removed', () => {
+    const e1 = entityManager.addEntity(entityManager.createEntity());
+    const e2 = entityManager.addEntity(entityManager.createEntity());
+    e1.add(new MockComponent);
+    e1.add(new OtherMockComponent);
+    e2.add(new MockComponent);
+    e2.add(new OtherMockComponent);
+
+    conditions.require = [MockComponent, OtherMockComponent];
+    const query = new EntityQuery(entityManager, conditions);
+
+    expect(query.results).toHaveLength(2);
+    
+    e1.remove(OtherMockComponent);
+    expect(query.results).toHaveLength(1);
+  });
+
+  it('removes entities that have an excluded component added', () => {
+    const e1 = entityManager.addEntity(entityManager.createEntity());
+    const e2 = entityManager.addEntity(entityManager.createEntity());
+    e1.add(new MockComponent);
+    e1.add(new OtherMockComponent);
+    e2.add(new MockComponent);
+    e2.add(new OtherMockComponent);
+
+    conditions.require = [MockComponent, OtherMockComponent];
+    conditions.exclude = [AnotherMockComponent];
+    const query = new EntityQuery(entityManager, conditions);
+
+    expect(query.results).toHaveLength(2);
+    
+    e1.add(new AnotherMockComponent);
+    expect(query.results).toHaveLength(1);
+  })
 });

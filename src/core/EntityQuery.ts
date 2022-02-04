@@ -1,7 +1,7 @@
 import { Bitset } from "../utils/Bitset";
-import { getClass } from "../utils/Class";
 import { Class } from "./Class";
 import { Component } from "./Component";
+import { ComponentListener } from "./ComponentListener";
 import { Entity } from "./Entity";
 import { EntityListener } from "./EntityListener";
 import { EntityManager } from "./EntityManager";
@@ -10,7 +10,7 @@ import { UniqueId } from "./UniqueId";
 type Condition = Class<Component>;
 export type Conditions = { any?: Condition[], exclude?: Condition[], require?: Condition[] };
 
-export class EntityQuery implements EntityListener {
+export class EntityQuery implements ComponentListener, EntityListener {
 
   protected readonly any: Bitset;
   protected readonly require: Bitset;
@@ -36,6 +36,8 @@ export class EntityQuery implements EntityListener {
     this.results = this.entityManager.allEntities().filter(this.match.bind(this));
     // Add this query as an entity listener.
     this.entityManager.addEntityListener(this);
+    // Add this query as a component listener.
+    this.entityManager.addComponentListener(this);
   }
 
   /**
@@ -54,6 +56,44 @@ export class EntityQuery implements EntityListener {
    */
   entityRemoved(entity: Entity): void {
     this.match(entity) && this.removeEntity(entity);
+  }
+
+  /**
+   * Component listener callback.
+   * 
+   * @param entity The entity.
+   * @param component The component being added.
+   */
+  componentAdded(entity: Entity, component: Component) {
+    const id = UniqueId.forInstance(component);
+    const updated = (new Bitset)
+      .set(id.getIndex())
+      .or(entity.getComponentBitset());
+
+    const currentMatch = this.match(entity);
+    const willMatch = this.matchBitset(updated);
+
+    !currentMatch && willMatch && this.addEntity(entity);
+    currentMatch && !willMatch && this.removeEntity(entity);
+  }
+
+  /**
+   * Component listener callback.
+   * 
+   * @param entity The entity.
+   * @param component The component being removed.
+   */
+  componentRemoved(entity: Entity, component: Component) {
+    const id = UniqueId.forInstance(component);
+    const updated = (new Bitset)
+      .set(id.getIndex())
+      .xor(entity.getComponentBitset());
+
+    const currentMatch = this.match(entity);
+    const willMatch = this.matchBitset(updated);
+
+    !currentMatch && willMatch && this.addEntity(entity);
+    currentMatch && !willMatch && this.removeEntity(entity);
   }
 
   /**
@@ -83,9 +123,19 @@ export class EntityQuery implements EntityListener {
   protected match(entity: Entity) : boolean {
     const components = entity.getComponentBitset();
 
-    return this.containsRequired(components)
-      && this.containsAny(components)
-      && this.containsNone(components);
+    return this.matchBitset(components);
+  }
+
+  /**
+   * Get whether the bitset matches the query.
+   * 
+   * @param bitset The component bitset.
+   * @returns Whether the query matches.
+   */
+  protected matchBitset(bitset: Bitset) : boolean {
+    return this.containsRequired(bitset)
+      && this.containsAny(bitset)
+      && this.containsNone(bitset);
   }
 
   /**
