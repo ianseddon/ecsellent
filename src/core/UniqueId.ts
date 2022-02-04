@@ -9,6 +9,8 @@ const classRegister = [0];
 
 export class UniqueId {
 
+  public static anonymousIndex: number = 0;
+
   private readonly baseIndex: number;
   private readonly index: number;
   private readonly depth: number;
@@ -57,6 +59,12 @@ export class UniqueId {
   static forClass(clazz: Class<unknown>) : UniqueId {
     let uniqueId = clazz.__uniqueId;
     const depth = getClassDepth(clazz);
+
+    // Create unique IDs for every anonymous object.
+    if (clazz.name === 'Object') {
+      return new UniqueId(-2, this.anonymousIndex++, 0);
+    }
+
     if (!uniqueId || uniqueId.depth !== depth) {
       // If we don't have a unique ID for this class and it's
       // the base class, start filling the registry array.

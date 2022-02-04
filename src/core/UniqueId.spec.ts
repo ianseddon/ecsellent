@@ -1,3 +1,4 @@
+import { getClass } from "../utils/Class";
 import { UniqueId } from "./UniqueId";
 
 class DummyClass {}
@@ -33,6 +34,13 @@ describe('UniqueId', () => {
     expect(id1).not.toBe(id2);
     expect(id1).not.toBe(id3);
     expect(id2).not.toBe(id3);
+  });
+
+  it('generates different ids for anonymous functions', () => {
+    const id1 = UniqueId.forInstance({ a: 1 });
+    const id2 = UniqueId.forInstance({ b: 2 });
+
+    expect(id1.hash()).not.toBe(id2.hash());
   });
 
   it('groups classes by parentage', () => {
