@@ -27,17 +27,21 @@ export class Bitset {
    *
    * @param position The bit position.
    */
-  set(position: number) : void {
+  set(position: number) : Bitset {
     const index = this.positionToIndex(position);
     this.allocate(index);
     this.data[index] |= 1 << (position & 0x1f);
+
+    return this;
   }
 
   /**
    * Set all bits.
    */
-  setAll() : void {
+  setAll() : Bitset {
     this.data.fill(-1);
+
+    return this;
   }
 
   /**
@@ -45,20 +49,21 @@ export class Bitset {
    *
    * @param position The bit position.
    */
-  reset(position: number) : void {
+  reset(position: number) : Bitset {
     const index = this.positionToIndex(position);
-    // If out of range, return.
-    if (index > this.data.length) {
-      return;
+    // If in range, reset.
+    if (index <= this.data.length) {
+      this.data[index] &= ~(1 << (position & 0x1f));
     }
-    this.data[index] &= ~(1 << (position & 0x1f));
+    return this;
   }
 
   /**
    * Reset all bits.
    */
-  clear() : void {
+  clear() : Bitset {
     this.data.fill(0);
+    return this;
   }
 
   /**
@@ -66,10 +71,11 @@ export class Bitset {
    *
    * @param position The bit position.
    */
-  flip(position: number) : void {
+  flip(position: number) : Bitset {
     const index = this.positionToIndex(position);
     this.allocate(index);
     this.data[index] ^= 1 << (index & 0x1f);
+    return this;
   }
 
   /**
