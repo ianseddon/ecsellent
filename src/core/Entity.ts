@@ -33,9 +33,9 @@ export class Entity {
    */
   private componentBitset: Bitset = new Bitset();
 
-  private entityManager: EntityManager;
+  private entityManager?: EntityManager;
 
-  constructor(entityManager: EntityManager) {
+  constructor(entityManager?: EntityManager) {
     this.entityManager = entityManager;
   }
 
