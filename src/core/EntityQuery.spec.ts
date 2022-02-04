@@ -27,8 +27,8 @@ describe('EntityQuery', () => {
     conditions.require = [MockComponent];
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(1);
-    expect(query.results[0]).toBe(entity);
+    expect(query.results.size).toBe(1);
+    expect(query.results.has(entity.id)).toBe(true);
   });
 
   it('adds newly added entities to the results', () => {
@@ -39,11 +39,13 @@ describe('EntityQuery', () => {
 
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(0);
+    expect(query.results.size).toBe(0);
+
+    entityManager.addEntityListener(query);
     entityManager.addEntity(entity);
 
-    expect(query.results).toHaveLength(1);
-    expect(query.results[0]).toBe(entity);
+    expect(query.results.size).toBe(1);
+    expect(query.results.has(entity.id)).toBe(true);
   });
 
   it('adds entities containing one of the any conditions', () => {
@@ -55,8 +57,8 @@ describe('EntityQuery', () => {
 
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(1);
-    expect(query.results[0]).toBe(e1);
+    expect(query.results.size).toBe(1);
+    expect(query.results.has(e1.id)).toBe(true);
   });
 
   it('excludes entities without all required components', () => {
@@ -71,8 +73,8 @@ describe('EntityQuery', () => {
 
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(1);
-    expect(query.results[0]).toBe(e1);
+    expect(query.results.size).toBe(1);
+    expect(query.results.has(e1.id)).toBe(true);
   });
 
   it('excludes entities with any excluded component', () => {
@@ -90,8 +92,8 @@ describe('EntityQuery', () => {
 
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(1);
-    expect(query.results[0]).toBe(e1);
+    expect(query.results.size).toBe(1);
+    expect(query.results.has(e1.id)).toBe(true);
   });
 
   it('removes entities from results when removed from entity manager', () => {
@@ -104,11 +106,13 @@ describe('EntityQuery', () => {
 
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(2);
+    expect(query.results.size).toBe(2);
+
+    entityManager.addEntityListener(query);
     entityManager.removeEntity(e1.id);
 
-    expect(query.results).toHaveLength(1);
-    expect(query.results[0]).toBe(e2);
+    expect(query.results.size).toBe(1);
+    expect(query.results.has(e2.id)).toBe(true);
   });
 
   it('includes entities that have a required component added', () => {
@@ -121,10 +125,12 @@ describe('EntityQuery', () => {
     conditions.require = [MockComponent, OtherMockComponent];
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(1);
+    expect(query.results.size).toBe(1);
+
+    entityManager.addComponentListener(query);
     e1.add(new OtherMockComponent);
 
-    expect(query.results).toHaveLength(2);
+    expect(query.results.size).toBe(2);
   });
 
   it('removes entities that have a required component removed', () => {
@@ -138,10 +144,12 @@ describe('EntityQuery', () => {
     conditions.require = [MockComponent, OtherMockComponent];
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(2);
-    
+    expect(query.results.size).toBe(2);
+
+    entityManager.addComponentListener(query);
     e1.remove(OtherMockComponent);
-    expect(query.results).toHaveLength(1);
+
+    expect(query.results.size).toBe(1);
   });
 
   it('removes entities that have an excluded component added', () => {
@@ -156,10 +164,12 @@ describe('EntityQuery', () => {
     conditions.exclude = [AnotherMockComponent];
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(2);
+    expect(query.results.size).toBe(2);
     
+    entityManager.addComponentListener(query);
     e1.add(new AnotherMockComponent);
-    expect(query.results).toHaveLength(1);
+
+    expect(query.results.size).toBe(1);
   });
 
   it('notifies listeners when entities are added or removed from the query results', () => {
@@ -173,23 +183,26 @@ describe('EntityQuery', () => {
     conditions.exclude = [AnotherMockComponent];
     const query = new EntityQuery(entityManager, conditions);
 
-    expect(query.results).toHaveLength(1);
+    entityManager.addEntityListener(query);
+    entityManager.addComponentListener(query);
 
-    const entityAdded = jest.fn();
-    const entityRemoved = jest.fn();
+    expect(query.results.size).toBe(1);
+
+    const queryEntityAdded = jest.fn();
+    const queryEntityRemoved = jest.fn();
     query.addQueryListener({
-      entityAdded,
-      entityRemoved,
+      queryEntityAdded,
+      queryEntityRemoved,
     });
 
     e1.add(new OtherMockComponent);
 
-    expect(entityAdded).toBeCalled()
-    expect(entityRemoved).not.toBeCalled();
+    expect(queryEntityAdded).toBeCalled()
+    expect(queryEntityRemoved).not.toBeCalled();
 
     e1.add(new AnotherMockComponent);
     e2.add(new AnotherMockComponent);
 
-    expect(entityRemoved).toBeCalledTimes(2);
+    expect(queryEntityRemoved).toBeCalledTimes(2);
   });
 });

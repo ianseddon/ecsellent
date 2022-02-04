@@ -2,8 +2,9 @@ import { Bitset } from "../utils/Bitset";
 import { Class } from "./Class";
 import { Component } from "./Component";
 import { ComponentListener } from "./ComponentListener";
-import { Entity } from "./Entity";
+import { Entity, EntityId } from "./Entity";
 import { EntityListener } from "./EntityListener";
+import { EntityQueryListener } from "./EntityQueryListener";
 import { EntityManager } from "./EntityManager";
 import { UniqueId } from "./UniqueId";
 import { getClass } from "../utils/Class";
@@ -18,12 +19,12 @@ export class EntityQuery implements ComponentListener, EntityListener {
   protected readonly exclude: Bitset;
   protected readonly entityManager: EntityManager;
 
-  protected queryListeners: Map<Class<EntityListener>, EntityListener> = new Map();
+  protected queryListeners: Map<UniqueId, EntityQueryListener> = new Map();
 
   /**
    * The results of the query.
    */
-  results: Entity[] = [];
+  results: Map<EntityId, Entity> = new Map();
 
   constructor(entityManager: EntityManager, conditions: Conditions) {
     this.any = UniqueId.bitsetForClasses(...conditions.any || []);
@@ -36,11 +37,9 @@ export class EntityQuery implements ComponentListener, EntityListener {
     }
 
     // Populate the results from any existing entities.
-    this.results = this.entityManager.allEntities().filter(this.match.bind(this));
-    // Add this query as an entity listener.
-    this.entityManager.addEntityListener(this);
-    // Add this query as a component listener.
-    this.entityManager.addComponentListener(this);
+    this.entityManager.allEntities().filter(this.match.bind(this)).forEach((entity) => {
+      this.results.set(entity.id, entity);
+    });
   }
 
   /**
@@ -48,8 +47,8 @@ export class EntityQuery implements ComponentListener, EntityListener {
    * 
    * @param entityListener
    */
-  addQueryListener(queryListener: EntityListener): void {
-    this.queryListeners.set(getClass(queryListener), queryListener);
+  addQueryListener(queryListener: EntityQueryListener): void {
+    this.queryListeners.set(UniqueId.forInstance(queryListener), queryListener);
   }
 
   /**
@@ -57,8 +56,8 @@ export class EntityQuery implements ComponentListener, EntityListener {
    * 
    * @param entityListener
    */
-  removeQueryListener<T extends EntityListener>(queryListenerClass: Class<T>): void {
-    this.queryListeners.delete(queryListenerClass);
+  removeQueryListener<T extends EntityQueryListener>(queryListenerClass: Class<T>): void {
+    this.queryListeners.delete(UniqueId.forClass(queryListenerClass));
   }
 
   /**
@@ -123,9 +122,13 @@ export class EntityQuery implements ComponentListener, EntityListener {
    * @param entity The entity to add.
    */
   protected addEntity(entity: Entity) : void {
-    this.queryListeners.forEach(queryListener => queryListener.entityAdded(entity));
+    if (this.results.has(entity.id)) {
+      return;
+    }
 
-    this.results.push(entity);
+    this.queryListeners.forEach(queryListener => queryListener.queryEntityAdded(entity));
+
+    this.results.set(entity.id, entity);
   }
 
   /**
@@ -134,10 +137,12 @@ export class EntityQuery implements ComponentListener, EntityListener {
    * @param entity The entity to remove.
    */
   protected removeEntity(entity: Entity) : void {
-    this.queryListeners.forEach(queryListener => queryListener.entityRemoved(entity));
+    if (!this.results.has(entity.id)) {
+      return;
+    }
 
-    const index = this.results.indexOf(entity);
-    index !== -1 && this.results.splice(index, 1);
+    this.queryListeners.forEach(queryListener => queryListener.queryEntityRemoved(entity));
+    this.results.delete(entity.id);
   }
 
   /**

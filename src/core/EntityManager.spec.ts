@@ -69,7 +69,7 @@ describe('EntityManager', () => {
     const listener = new TestListener();
     entityManager.addEntityListener(listener);
 
-    entityManager.removeEntityListener(TestListener);
+    entityManager.removeEntityListener(listener);
     entityManager.addEntity(entityManager.createEntity());
     
     expect(listener.added).toBe(false);

@@ -4,6 +4,7 @@ import { Entity, EntityId } from "./Entity";
 import { EntityListener } from "./EntityListener";
 import { Class } from './Class';
 import { getClass } from "../utils/Class";
+import { UniqueId } from "./UniqueId";
 
 /**
  * Interface to allow mutation of entity ID.
@@ -32,12 +33,12 @@ export class EntityManager implements ComponentListener {
   /**
    * The hash of entity listeners.
    */
-  protected entityListeners: Map<Class<EntityListener>, EntityListener> = new Map();
+  protected entityListeners: Map<UniqueId, EntityListener> = new Map();
 
   /**
    * The hash of component listeners.
    */
-  protected componentListeners: Map<Class<ComponentListener>, ComponentListener> = new Map();
+  protected componentListeners: Map<UniqueId, ComponentListener> = new Map();
 
   /**
    * Get the ID of the next created entity.
@@ -111,7 +112,8 @@ export class EntityManager implements ComponentListener {
    * @param entityListener
    */
   addEntityListener(entityListener: EntityListener): void {
-    this.entityListeners.set(getClass(entityListener), entityListener);
+    const id = UniqueId.forInstance(entityListener);
+    this.entityListeners.set(id, entityListener);
   }
 
   /**
@@ -119,8 +121,9 @@ export class EntityManager implements ComponentListener {
    * 
    * @param entityListener
    */
-  removeEntityListener<T extends EntityListener>(entityListenerClass: Class<T>): void {
-    this.entityListeners.delete(entityListenerClass);
+  removeEntityListener(entityListener: EntityListener): void {
+    const id = UniqueId.forInstance(entityListener);
+    this.entityListeners.delete(id);
   }
 
   /**
@@ -173,7 +176,8 @@ export class EntityManager implements ComponentListener {
    * @param componentListener The component listener.
    */
   addComponentListener(componentListener: ComponentListener) {
-    this.componentListeners.set(getClass(componentListener), componentListener);
+    const id = UniqueId.forInstance(componentListener);
+    this.componentListeners.set(id, componentListener);
   }
 
   /**
@@ -181,8 +185,9 @@ export class EntityManager implements ComponentListener {
    * 
    * @param componentListenerClass The component listener class.
    */
-  removeComponentListener<T extends ComponentListener>(componentListenerClass: Class<T>) {
-    this.componentListeners.delete(componentListenerClass);
+  removeComponentListener(componentListener: ComponentListener) {
+    const id = UniqueId.forInstance(componentListener);
+    this.componentListeners.delete(id);
   }
 
   /**
@@ -191,6 +196,10 @@ export class EntityManager implements ComponentListener {
    * @param component 
    */
   componentAdded(entity: Entity, component: Component) {
+    if (!entity.instantiated()) {
+      return;
+    }
+
     this.componentListeners.forEach(componentListener => componentListener.componentAdded(entity, component));
   }
 
@@ -201,6 +210,10 @@ export class EntityManager implements ComponentListener {
    * @param component The component.
    */
   componentRemoved(entity: Entity, component: Component) {
+    if (!entity.instantiated()) {
+      return;
+    }
+
     this.componentListeners.forEach(componentListener => componentListener.componentRemoved(entity, component));
   }
 

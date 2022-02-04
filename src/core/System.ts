@@ -1,11 +1,17 @@
 import Engine from "./Engine";
+import { Component } from "./Component";
+import { ComponentListener } from "./ComponentListener";
+import { Entity } from "./Entity";
+import { EntityListener } from "./EntityListener";
 import { EntityManager } from "./EntityManager";
 import { Conditions, EntityQuery } from "./EntityQuery";
+import { EntityQueryListener } from "./EntityQueryListener";
+import { UniqueId } from "./UniqueId";
 
 /**
  * The base class for all systems. These are intended to process entities.
  */
-export abstract class System {
+export abstract class System implements ComponentListener, EntityListener {
 
   /**
    * The engine this is attached to.
@@ -53,6 +59,8 @@ export abstract class System {
    */
   addedToEngine(engine: Engine): void {
     this.engine = engine;
+    console.log('addedToEngine');
+    
     this.buildQueries(engine.entityManager);
   }
 
@@ -62,8 +70,46 @@ export abstract class System {
    * @param engine The engine this system is attached to.
    */
   removedFromEngine(engine: Engine): void {
+    engine.entityManager.removeEntityListener(this);
+    engine.entityManager.removeComponentListener(this);
+
     this.cleanupQueries(engine.entityManager);
     this.engine = null;
+  }
+
+  /**
+   * 
+   * @param entity 
+   */
+  entityAdded(entity: Entity) {
+    Object.values(this.queries).forEach((query) => query.entityAdded(entity));
+  }
+
+  /**
+   * 
+   * @param entity 
+   */
+  entityRemoved(entity: Entity) {
+    Object.values(this.queries).forEach((query) => query.entityRemoved(entity));
+  }
+
+  /**
+   * 
+   * @param entity 
+   * 
+   * @param component 
+   */
+  componentAdded(entity: Entity, component: Component) {
+    Object.entries(this.queries).forEach(([key, query]) => query.componentAdded(entity, component)); 
+  }
+
+  /**
+   * 
+   * @param entity 
+   * @param component 
+   */
+  componentRemoved(entity: Entity, component: Component) {
+    Object.entries(this.queries).forEach(([key, query]) => query.componentRemoved(entity, component));
   }
 
   /**
@@ -81,14 +127,37 @@ export abstract class System {
   protected buildQueries(entityManager: EntityManager) : void {
     Object.entries(this.conditions).forEach(([key, conditions]) => {
       this.queries[key] = new EntityQuery(entityManager, conditions);
+      this.queries[key].addQueryListener({
+        queryEntityAdded: (entity: Entity) => this.queryEntityAdded(key, entity),
+        queryEntityRemoved: (entity: Entity) => this.queryEntityRemoved(key, entity),
+      });
     });
+
+    // Add listeners for notifying queries of changes.
+    entityManager.addEntityListener(this);
+    entityManager.addComponentListener(this);
   }
+
+  /**
+   * Notifies when an entity is added to a query result.
+   * 
+   * @param key The condition key.
+   * @param entity The entity.
+   */
+  queryEntityAdded(key: string, entity: Entity) {}
+
+  /**
+   * Notifies when an entity is removed from a query result.
+   * 
+   * @param key The condition key.
+   * @param entity The entity.
+   */
+  queryEntityRemoved(key: string, entity: Entity) {}
 
   /**
    * Clean up queries.
    */
   protected cleanupQueries(entityManager: EntityManager) : void {
-    // TODO: Unregister entity listeners.
     this.queries = {};
   }
 }
