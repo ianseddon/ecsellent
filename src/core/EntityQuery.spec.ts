@@ -160,5 +160,36 @@ describe('EntityQuery', () => {
     
     e1.add(new AnotherMockComponent);
     expect(query.results).toHaveLength(1);
-  })
+  });
+
+  it('notifies listeners when entities are added or removed from the query results', () => {
+    const e1 = entityManager.addEntity(entityManager.createEntity());
+    const e2 = entityManager.addEntity(entityManager.createEntity());
+    e1.add(new MockComponent);
+    e2.add(new MockComponent);
+    e2.add(new OtherMockComponent);
+
+    conditions.require = [MockComponent, OtherMockComponent];
+    conditions.exclude = [AnotherMockComponent];
+    const query = new EntityQuery(entityManager, conditions);
+
+    expect(query.results).toHaveLength(1);
+
+    const entityAdded = jest.fn();
+    const entityRemoved = jest.fn();
+    query.addQueryListener({
+      entityAdded,
+      entityRemoved,
+    });
+
+    e1.add(new OtherMockComponent);
+
+    expect(entityAdded).toBeCalled()
+    expect(entityRemoved).not.toBeCalled();
+
+    e1.add(new AnotherMockComponent);
+    e2.add(new AnotherMockComponent);
+
+    expect(entityRemoved).toBeCalledTimes(2);
+  });
 });

@@ -107,6 +107,7 @@ export class EntityManager implements ComponentListener {
 
   /**
    * Add a listener that will be notified when entities are added/removed.
+   * 
    * @param entityListener
    */
   addEntityListener(entityListener: EntityListener): void {
@@ -115,6 +116,7 @@ export class EntityManager implements ComponentListener {
 
   /**
    * Remove the entity listener of the given class.
+   * 
    * @param entityListener
    */
   removeEntityListener<T extends EntityListener>(entityListenerClass: Class<T>): void {

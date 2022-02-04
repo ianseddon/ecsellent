@@ -6,6 +6,7 @@ import { Entity } from "./Entity";
 import { EntityListener } from "./EntityListener";
 import { EntityManager } from "./EntityManager";
 import { UniqueId } from "./UniqueId";
+import { getClass } from "../utils/Class";
 
 type Condition = Class<Component>;
 export type Conditions = { any?: Condition[], exclude?: Condition[], require?: Condition[] };
@@ -16,6 +17,8 @@ export class EntityQuery implements ComponentListener, EntityListener {
   protected readonly require: Bitset;
   protected readonly exclude: Bitset;
   protected readonly entityManager: EntityManager;
+
+  protected queryListeners: Map<Class<EntityListener>, EntityListener> = new Map();
 
   /**
    * The results of the query.
@@ -38,6 +41,24 @@ export class EntityQuery implements ComponentListener, EntityListener {
     this.entityManager.addEntityListener(this);
     // Add this query as a component listener.
     this.entityManager.addComponentListener(this);
+  }
+
+  /**
+   * Add a listener that will be notified when entities are added/removed from the query.
+   * 
+   * @param entityListener
+   */
+  addQueryListener(queryListener: EntityListener): void {
+    this.queryListeners.set(getClass(queryListener), queryListener);
+  }
+
+  /**
+   * Remove the entity listener of the given class.
+   * 
+   * @param entityListener
+   */
+  removeQueryListener<T extends EntityListener>(queryListenerClass: Class<T>): void {
+    this.queryListeners.delete(queryListenerClass);
   }
 
   /**
@@ -102,6 +123,8 @@ export class EntityQuery implements ComponentListener, EntityListener {
    * @param entity The entity to add.
    */
   protected addEntity(entity: Entity) : void {
+    this.queryListeners.forEach(queryListener => queryListener.entityAdded(entity));
+
     this.results.push(entity);
   }
 
@@ -111,6 +134,8 @@ export class EntityQuery implements ComponentListener, EntityListener {
    * @param entity The entity to remove.
    */
   protected removeEntity(entity: Entity) : void {
+    this.queryListeners.forEach(queryListener => queryListener.entityRemoved(entity));
+
     const index = this.results.indexOf(entity);
     index !== -1 && this.results.splice(index, 1);
   }
